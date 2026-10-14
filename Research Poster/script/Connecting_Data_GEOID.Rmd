@@ -1,0 +1,217 @@
+---
+title: "Connecting_Data_GEOID"
+author: "Makenna Butlak"
+output: html_document
+---
+
+Downloading the functions that can read the data
+```{r}
+library(dplyr)
+library(readr)
+```
+
+
+reading in the CSV files
+*unos data set must be added to users own data-raw folder 
+```{r}
+unos <- readRDS("../data-raw/unos-ltx-art.rds")
+us_zips<- read_csv(
+  "../data/us-zips.csv",
+  col_types = cols(
+    .default = col_guess(),
+    zip_code = col_character(),
+    county_fips = col_character()
+  )
+)
+```
+
+looking at the names of the columns of each data set to see how to match them 
+```{r}
+names(unos)
+names(us_zips)
+```
+
+Combining the UNOS dataset with the zip code data set from GitHub
+```{r}
+unos <- unos %>%
+  mutate(ZIP = sprintf("%05d", as.integer(PERM_ZIP_TRR)))
+
+merged_data <- unos %>%
+  left_join(
+    us_zips,
+    by = c("PERM_ZIP_TRR" = "zip_code")
+  )
+```
+
+Making sure the merged data carried the same number of rows so we didn't loose any data
+```{r}
+nrow(unos)
+nrow(merged_data)
+```
+
+checks how many observations successfully received a county FIPS code after merging your ZIP code datasets
+```{r}
+# Check how many observations successfully matched to a county FIPS code
+sum(!is.na(merged_data$county_fips))
+
+# Check how many observations are missing a county FIPS code after merging
+sum(is.na(merged_data$county_fips))
+```
+
+Calculates the percentage of observations that successfully received a county FIPS code after merging the datasets
+```{r}
+mean(!is.na(merged_data$county_fips)) * 100
+```
+
+creates a new dataset containing only the observations that are missing a county FIPS code after merging
+```{r}
+missing_zips <- merged_data %>%
+  filter(is.na(county_fips))
+missing_zips
+```
+
+check whether the original ZIP code reference dataset contains missing county FIPS values and examine the states associated with unmatched observations
+```{r}
+sum(is.na(us_zips$county_fips))
+missing_zips %>%
+  count(state, sort = TRUE)
+```
+261 observations with missing state information in your missing_zips dataset.
+
+Identifies the unique ZIP codes that failed to match during the merge and checks whether those ZIP codes exist in the reference dataset (us_zips)
+```{r}
+unmatched_zips <- merged_data %>%
+  filter(!is.na(ZIP), is.na(county_fips)) %>%
+  distinct(ZIP)
+
+unmatched_zips %>%
+  mutate(
+    exists_in_us_zips = ZIP %in% us_zips$zip_code
+  ) %>%
+  print(n = Inf)
+```
+
+converts incorrectly formatted missing ZIP codes into actual missing values, reruns the merge, and identifies ZIP codes that still fail to match the reference dataset
+```{r}
+
+# Convert "000NA" values back into actual missing values (NA)
+unos <- unos %>%
+  mutate(ZIP = na_if(ZIP, "000NA"))
+
+# Rerun the merge using the corrected ZIP codes
+merged_data <- unos %>%
+  left_join(us_zips, by = c("ZIP" = "zip_code"))
+```
+We get 33 rows which means we took care of the ones with no zip codes but still have to solve the issue of missing data. 
+
+checks whether the previously unmatched ZIP codes have an exact match in the ZIP code reference dataset
+```{r}
+unmatched_zips %>%
+  mutate(
+    exact_match = ZIP %in% us_zips$zip_code
+  ) %>%
+  print(n = Inf)
+```
+The 33 that we identified are  marked as not found in the us_zips data set. 
+
+Trying to make sure they are not in the data set rather than being ignored for some reason 
+```{r}
+"93596" %in% unos$ZIP
+"93596" %in% us_zips$zip_code
+```
+
+```{r}
+names(unos)
+```
+
+Cleaning the data again to  omit the participants with missing zipcodes 
+```{r}
+unos_clean <- unos %>%
+  filter(
+    !is.na(PERM_ZIP_TRR),
+    !PERM_ZIP_TRR %in% c("000NA", "NA", "")
+  )
+unos_clean
+```
+```{r}
+nrow(unos)
+nrow(unos_clean)
+```
+
+Seeing how many participants we have after omitting the ones without zip codes 
+```{r}
+merge_data_without_missing <- unos_clean %>% 
+  left_join(us_zips, by = c("PERM_ZIP_TRR" = "zip_code"))
+nrow(merge_data_without_missing)
+```
+
+```{r}
+# Number of distinct unmatched ZIP codes
+misaligned_zipcodes <- merge_data_without_missing %>%
+  filter(is.na(county_fips)) %>%
+  summarise(n_distinct(PERM_ZIP_TRR))
+misaligned_zipcodes
+```
+Lists out the zip codes that we are missing 
+```{r}
+missing_zips <- merge_data_without_missing %>%
+  filter(is.na(county_fips)) %>%
+  select(PERM_ZIP_TRR)
+
+missing_zips
+```
+
+Checking zip codes from the United States Zip Codes website- https://www.unitedstateszipcodes.org/
+
+Missing zip-codes and where they are- 
+93596- PO Box in Boron, California, Kern County			
+80213- Not currently assigned or active by USPS, falls within general Denver, CO region			
+73083- PO only in Edmond, Oklahoma County, Oklahoma, Oklahoma County  				
+39909- Not currently assigned or active by USPS 		
+90617- Landkreis Furth (not in US)		
+40536- University Of Ky Med Ctr in Lexington, KY, Fayette County 	
+14321- not currently assigned or active by USPS; Al Noor, Riyadh county			
+26544- PO box in Pentress, WV, Monongalia County				
+32774- PO Box Orange City, Florida, Volusia County				
+33468- PO box in Jupiter, FL, Palm Beach County 			
+85299- PO Box in Gilbert, Arizona Maricopa County,	
+02480- not active in US but could be Mexico, France, Finland, South Korea, Peru		
+95474- not active 				
+12049- not active in US, Neukölln district in Berlin, Germany 				
+70010- PO box in Metairie, LA, Jefferson Parish County				
+02355- PO box in North Carver, MA, Plymouth County				
+51307- not active				
+77259- PO box in Houston, TX, Harris County				
+97335- PO box in Crabtree, OR, Linn County				
+57390- not in US, Moselle county				
+93116- PO box in Goleta, CA, Santa Barbara County				
+29990- not active				
+82717- PO box in Gillette, WY, Campbell County				
+06064- PO box in Poquonock, CT, Hartford County				
+19360- PO box in New London, PA, Chester County				
+99950- PO box in Ketchikan, AK, Prince of Wales-Outer Ketchikan Borough County		
+85222- Pinal County, Casa Grande, AZ; Pinal County			
+61644- Magazine Marketplace Inc, Peoria, Illinois, Peoria County 				
+77492- PO Box in Katy, TX, Waller County				
+77720- PO Box in Beaumont, TX, Jefferson County
+31416- PO box in Savannah, GA, Chatham County			
+95221- PO box in Altaville, CA, Calaveras County				
+82902- PO box in Rock Springs, WY, Sweetwater County				
+ 
+Filtering out all of the inactive and PO boxes that don't match with the downloaded zip code data set 
+```{r}
+offical_cleaned_data <- merge_data_without_missing %>%
+  filter(!PERM_ZIP_TRR %in% missing_zips$PERM_ZIP_TRR)
+
+#verifying that 33 of them were removed 
+nrow(merge_data_without_missing) - nrow(offical_cleaned_data)
+
+```
+
+```{r}
+View(offical_cleaned_data)
+```
+
+
+
+
