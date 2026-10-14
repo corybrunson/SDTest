@@ -212,3 +212,6 @@ nrow(merge_data_without_missing) - nrow(offical_cleaned_data)
 View(offical_cleaned_data)
 ```
 
+
+
+
