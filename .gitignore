@@ -1,0 +1,10 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.RDataTmp
+
+# Research Poster
+Research Poster/data-raw/
+Research Poster/results/
+
