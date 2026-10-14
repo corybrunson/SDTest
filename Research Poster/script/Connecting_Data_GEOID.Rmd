@@ -12,10 +12,11 @@ library(readr)
 
 
 reading in the CSV files
+*unos data set must be added to users own data-raw folder 
 ```{r}
-unos <- readRDS("unos-ltx-art.rds")
+unos <- readRDS("../data-raw/unos-ltx-art.rds")
 us_zips<- read_csv(
-  "us-zips.csv",,
+  "../data/us-zips.csv",
   col_types = cols(
     .default = col_guess(),
     zip_code = col_character(),
@@ -100,16 +101,6 @@ unos <- unos %>%
 # Rerun the merge using the corrected ZIP codes
 merged_data <- unos %>%
   left_join(us_zips, by = c("ZIP" = "zip_code"))
-
-# Identify distinct ZIP codes that did not match and check whether they exist in the ZIP code reference datasetunmatched_zips <- merged_data %>%
-  filter(!is.na(ZIP), is.na(county_fips)) %>%
-  distinct(ZIP) %>%
-  mutate(
-    exists_in_us_zips = ZIP %in% us_zips$zip_code
-  )
-
-# Display all unmatched ZIP codes
-print(unmatched_zips, n = Inf)
 ```
 We get 33 rows which means we took care of the ones with no zip codes but still have to solve the issue of missing data. 
 
@@ -207,3 +198,17 @@ Missing zip-codes and where they are-
 95221- PO box in Altaville, CA, Calaveras County				
 82902- PO box in Rock Springs, WY, Sweetwater County				
  
+Filtering out all of the inactive and PO boxes that don't match with the downloaded zip code data set 
+```{r}
+offical_cleaned_data <- merge_data_without_missing %>%
+  filter(!PERM_ZIP_TRR %in% missing_zips$PERM_ZIP_TRR)
+
+#verifying that 33 of them were removed 
+nrow(merge_data_without_missing) - nrow(offical_cleaned_data)
+
+```
+
+```{r}
+View(offical_cleaned_data)
+```
+
