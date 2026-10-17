@@ -213,5 +213,17 @@ View(offical_cleaned_data)
 ```
 
 
+```{r}
+woodardGEOID<- read.csv("../data/woodardZIPmerge.csv")
+
+UNOSxWoodard <- offical_cleaned_data %>%
+  left_join(woodardGEOID, by = c("county" = "COUNTY.NAME..SHORT."), relationship = "many-to-many")
+  
+UNOSxWood.clean<- UNOSxWoodard %>% select(-latitude, -longitude, -timezone, -metro_area, -median_household_income, -median_age, -households, - avg_household_size, - bachelors_or_higher_pct, -median_home_value, -median_gross_rent, -poverty_rate_pct, -unemployment_rate_pct, -primary_language, -ANSICODE,-ALAND, -AWATER, -ALAND_SQMI, -AWATER_SQMI, -INTPTLAT, -INTPTLONG)
+                        
+print(UNOSxWood.clean)
+
+UNOSxWood.clean
+```
 
 
