@@ -8,6 +8,7 @@ Downloading the functions that can read the data
 ```{r}
 library(dplyr)
 library(readr)
+library(ggplot2)
 ```
 
 
@@ -222,13 +223,73 @@ UNOSxWoodard <- offical_cleaned_data %>%
   
 UNOSxWood.clean<- UNOSxWoodard %>% select(-latitude, -longitude, -timezone, -metro_area, -median_household_income, -median_age, -households, - avg_household_size, - bachelors_or_higher_pct, -median_home_value, -median_gross_rent, -poverty_rate_pct, -unemployment_rate_pct, -primary_language, -ANSICODE,-ALAND, -AWATER, -ALAND_SQMI, -AWATER_SQMI, -INTPTLAT, -INTPTLONG)
  
-UNOSxWood.clean <- as.double(UNOSxWood.clean$WOODARD.NATION.NAME)
-
-UNOSxWood.clean
 ```
 
 Unos/Woodard Kruskal-Wallis Test
 ```{r}
-Wood.KW <- kruskal.test(COMPOSITE_DEATH_DPTX ~ WOODARD.NATION.NAME, df = UNOSxWood.clean)
+Wood.KW <- kruskal.test(COMPOSITE_DEATH_DPTX ~ WOODARD.NATION.NAME, data = UNOSxWood.clean)
+
+Wood.KW
+
+ggplot(UNOSxWood.clean,
+       aes(x = WOODARD.NATION.NAME,
+           y = COMPOSITE_DEATH_DPTX)) +
+  geom_boxplot(fill = "lightblue", color = "black") +
+  labs(
+    title = "Post-Transplant Mortality by Woodard Nation",
+    x = "Woodard Nation",
+    y = "Composite Death"
+  )
+
+```
+UNOS/UNOS Regionalization Kruskal-Wallis Test
+```{r}
+Region.KW <- kruskal.test(COMPOSITE_DEATH_DPTX ~ REGION, data = UNOSxWood.clean)
+
+Region.KW
+
+
+ggplot(UNOSxWood.clean,
+       aes(x = REGION,
+           y = COMPOSITE_DEATH_DPTX)) +
+  geom_boxplot(fill = "salmon", color = "black") +
+  labs(
+    title = "Post-Transplant Mortality by Woodard Nation",
+    x = "UNOS Region",
+    y = "Composite Death DPTX"
+  ) 
+
+```
+
+Creating a column connecting the 9 census divisions to their respective state
+
+```{r}
+UNOSxWood.clean <- UNOSxWood.clean %>%
+  mutate(
+    Census_Division = as.character(state.division[match(state, state.abb)])
+  )
+
+table(UNOSxWood.clean$Census_Division, useNA = "ifany")
+
+```
+UNOS/Census Division Kruskal-Wallis Test
+```{r}
+Census.KW <- kruskal.test(COMPOSITE_DEATH_DPTX ~ Census_Division, data = UNOSxWood.clean)
+
+Census.KW
+
+ggplot(UNOSxWood.clean,
+       aes(x = Census_Division,
+           y = COMPOSITE_DEATH_DPTX)) +
+  geom_boxplot(fill = "lightgreen", color = "black") +
+  labs(
+    title = "Post-Transplant Mortality by Woodard Nation",
+    x = "US Census Divison",
+    y = "Composite Death DPTX"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
