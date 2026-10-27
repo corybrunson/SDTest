@@ -293,3 +293,76 @@ ggplot(UNOSxWood.clean,
   )
 ```
 
+Kaplan Meier Analysis 
+
+
+Woodard Nations KM & Log-Rank Analysis for 1 year & 3 years
+```{r, fig.width = 10}
+UNOSxWood.clean$status <- 1
+
+Woodardkm <- survfit(
+  Surv(
+    time = COMPOSITE_DEATH_DPTX,
+    event = status
+) ~ WOODARD.NATION.NAME, data = UNOSxWood.clean
+)
+
+
+summary(Woodardkm, times=c(365,1095))
+
+
+Woodard_logrank <- survdiff(
+  Surv(
+    time = COMPOSITE_DEATH_DPTX,
+    event = status
+) ~ WOODARD.NATION.NAME, data = UNOSxWood.clean
+)
+
+Woodard_logrank
+
+ggsurvplot( 
+  Woodardkm,
+  data = UNOSxWood.clean,
+  conf.int = TRUE,
+  pval = TRUE,
+  xlab = "Days",
+  ylab = "Survival Probability",
+  legend = "right"
+  )
+
+
+```
+
+UNOS/Census Division KM Analysis & Log-rank Test for 1 year & 3 years
+
+```{r}
+Censuskm <- survfit(
+  Surv(
+  time = COMPOSITE_DEATH_DPTX,
+  event = status
+) ~ Census_Division, data = UNOSxWood.clean
+)
+
+summary(Censuskm, times = c(365,1095))
+
+Census_logrank <- survdiff(
+  Surv(
+    time = COMPOSITE_DEATH_DPTX, 
+    event = status
+) ~ Census_Division, data = UNOSxWood.clean
+)
+
+Census_logrank
+
+ggsurvplot( 
+  Censuskm,
+  data = UNOSxWood.clean,
+  conf.int = TRUE,
+  pval = TRUE,
+  xlab = "Days",
+  ylab = "Survival Probability",
+  legend = "right"
+  )
+
+```
+
