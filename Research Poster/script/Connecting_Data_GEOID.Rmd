@@ -9,6 +9,9 @@ Downloading the functions that can read the data
 library(dplyr)
 library(readr)
 library(ggplot2)
+library(survival)
+library(survminer)
+library(ggfortify)
 ```
 
 
@@ -16,6 +19,7 @@ reading in the CSV files
 *unos data set must be added to users own data-raw folder 
 ```{r}
 unos <- readRDS("../data-raw/unos-ltx-art.rds")
+unos <- readRDS("../../../unos202309/data/unos-ltx.rds")
 us_zips<- read_csv(
   "../data/us-zips.csv",
   col_types = cols(
@@ -293,7 +297,7 @@ Kaplan Meier Analysis
 
 
 Woodard Nations KM & Log-Rank Analysis for 1 year & 3 years
-```{r, fig.width = 10}
+```{r, fig.width = 10, fig.height = 8}
 UNOSxWood.clean$status <- 1
 
 Woodardkm <- survfit(
@@ -304,7 +308,7 @@ Woodardkm <- survfit(
 )
 
 
-summary(Woodardkm, times=c(365,1095))
+summary(Woodardkm, times=365.2422*c(1, 3, 5, 10))
 
 
 Woodard_logrank <- survdiff(
@@ -316,22 +320,28 @@ Woodard_logrank <- survdiff(
 
 Woodard_logrank
 
-ggsurvplot( 
-  Woodardkm,
-  data = UNOSxWood.clean,
-  conf.int = TRUE,
-  pval = TRUE,
-  xlab = "Days",
-  ylab = "Survival Probability",
-  legend = "right"
-  )
+fortify(Woodardkm) |> 
+  ggplot(aes(x = time / 365.2422, y = surv)) +
+  geom_step(aes(color = strata)) +
+  ggfortify:::geom_confint(
+    aes(ymin = lower, ymax = upper, color = strata),
+    fill = "transparent", linetype = "solid"
+  ) +
+  scale_x_continuous(breaks = seq(0, 50, 10)) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_brewer(
+    type = "qual", palette = 2L,
+    aesthetics = c("color", "fill"), name = ""
+  ) +
+  theme(legend.position = "bottom") +
+  labs(x = "Years since transplant", y = "Surviving percent (patients)")
 
 
 ```
 
 UNOS/Census Division KM Analysis & Log-rank Test for 1 year & 3 years
 
-```{r}
+```{r, fig.width = 10, fig.height = 8}
 Censuskm <- survfit(
   Surv(
   time = COMPOSITE_DEATH_DPTX,
@@ -350,15 +360,22 @@ Census_logrank <- survdiff(
 
 Census_logrank
 
-ggsurvplot( 
-  Censuskm,
-  data = UNOSxWood.clean,
-  conf.int = TRUE,
-  pval = TRUE,
-  xlab = "Days",
-  ylab = "Survival Probability",
-  legend = "right"
-  )
+fortify(Censuskm) |> 
+  ggplot(aes(x = time / 365.2422, y = surv)) +
+  geom_step(aes(color = strata)) +
+  ggfortify:::geom_confint(
+    aes(ymin = lower, ymax = upper, color = strata),
+    fill = "transparent", linetype = "solid"
+  ) +
+  scale_x_continuous(breaks = seq(0, 50, 10)) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_brewer(
+    type = "qual", palette = 2L,
+    aesthetics = c("color", "fill"), name = ""
+  ) +
+  theme(legend.position = "bottom") +
+  labs(x = "Years since transplant", y = "Surviving percent (patients)") +
+  ggtitle("USE A DIFFERENT COLOR PALETTE")
 
 ```
 
