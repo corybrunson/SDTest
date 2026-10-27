@@ -207,12 +207,8 @@ offical_cleaned_data <- merge_data_without_missing %>%
 #verifying that 33 of them were removed 
 nrow(merge_data_without_missing) - nrow(offical_cleaned_data)
 
+names(offical_cleaned_data)
 ```
-
-```{r}
-View(offical_cleaned_data)
-```
-
 
 Creating data set with Woodard and UNOS data
 ```{r}
