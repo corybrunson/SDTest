@@ -19,7 +19,6 @@ reading in the CSV files
 *unos data set must be added to users own data-raw folder 
 ```{r}
 unos <- readRDS("../data-raw/unos-ltx-art.rds")
-unos <- readRDS("../../../unos202309/data/unos-ltx.rds")
 us_zips<- read_csv(
   "../data/us-zips.csv",
   col_types = cols(
