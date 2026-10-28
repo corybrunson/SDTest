@@ -319,7 +319,7 @@ Woodard_logrank <- survdiff(
 
 Woodard_logrank
 
-fortify(Woodardkm) |> 
+Woodard_plot <- fortify(Woodardkm) |> 
   ggplot(aes(x = time / 365.2422, y = surv)) +
   geom_step(aes(color = strata)) +
   ggfortify:::geom_confint(
@@ -334,8 +334,9 @@ fortify(Woodardkm) |>
   ) +
   theme(legend.position = "bottom") +
   labs(x = "Years since transplant", y = "Surviving percent (patients)")
+print(Woodard_plot)
 
-
+ggsave("Woodard-surv-km.pdf", width = unit(10, "in"), height = unit(8, "in"))
 ```
 
 UNOS/Census Division KM Analysis & Log-rank Test for 1 year & 3 years
@@ -359,7 +360,7 @@ Census_logrank <- survdiff(
 
 Census_logrank
 
-fortify(Censuskm) |> 
+Census_plot <- fortify(Censuskm) |> 
   ggplot(aes(x = time / 365.2422, y = surv)) +
   geom_step(aes(color = strata)) +
   ggfortify:::geom_confint(
@@ -375,6 +376,9 @@ fortify(Censuskm) |>
   theme(legend.position = "bottom") +
   labs(x = "Years since transplant", y = "Surviving percent (patients)") +
   ggtitle("USE A DIFFERENT COLOR PALETTE")
+print(Census_plot)
+
+ggsave("Census-surv-km.pdf", width = unit(10, "in"), height = unit(8, "in"))
 
 ```
 
